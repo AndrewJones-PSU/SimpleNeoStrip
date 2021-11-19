@@ -9,9 +9,8 @@
  */
 
 // Include the FastLED and LCD library
-#include <FastLED.h>    // FastLED library which handles writing to the LED strip(s)
-#include <LiquidMenu.h> // Library for making menus for the 16x2 LCD
-#include <glyphs.h>     // part of liquidmenu, this might be unecessary
+#include <FastLED.h>       // FastLED library which handles writing to the LED strip(s)
+#include <LiquidCrystal.h> // LCD library which handles the LCD display
 
 /*
  * Definition of platform, this helps determine platform-specific code for timers
@@ -41,70 +40,39 @@ CRGB leds[LEDS_PER_STRIP * LED_STRIP_COUNT];
 #define LCD_D6_PIN 6
 #define LCD_D7_PIN 7
 
+// enums for effects and menu items
+enum effects
+{
+    effectSolidColor,
+    effectSolidDrip,
+    effectSolidCycle,
+    effectRainbowSwirl,
+    effectRainbowDrip,
+    effectRainbowCycle
+};
+
+enum setting
+{
+    settingSolidColorR,
+    settingSolidColorG,
+    settingSolidColorB,
+    settingSolidColorOnSpacing,
+    settingSolidColorOffSpacing
+};
+
 // Definition of settings (TODO: make some of these savable to EEPROM)
-int on = 1;                    // Whether or not the lightstrip is on
-int brightness = 64;           // Brightness of the lightstrip
-CRGB solidColor = CRGB::White; // Color of the lightstrip
+uint8_t lightstripOn = 1;                  // Whether or not the lightstrip is on
+uint8_t menuindex = 0;                     // Which menu are we on, 0 = effects, 1 = settings
+effects effectindex = effectSolidColor;    // Which effect are we on
+setting settingindex = settingSolidColorR; // Which setting are we on in the menu
+uint8_t brightness = 64;                   // Brightness of the lightstrip
+CRGB solidColorColor = CRGB::White;        // Color of the lightstrip
+uint8_t SolidColorOnSpacing = 1;           // # of on pixels for solid color between segments
+uint8_t SolidColorOffSpacing = 0;          // # of off pixels for solid color between segments
 
 // Definition of the LCD object
 LiquidCrystal lcd(LCD_RS_PIN, LCD_ENABLE_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PIN);
 
-// Definition of menu strings/vars (for stuff that change)
-const char *lightstrip_on_off = "on  -- ";
-
-// Definition of the menu screens/lines
-//
-
-// 2nd Line that's always displayed on effect selection menus
-LiquidLine LightstripStatusLine(3, 1, lightstrip_on_off, (int)FastLED.getBrightness());
-
-// 1st Lines for effect names
-LiquidLine SolidColorLine(2, 0, "Solid  Color");
-LiquidLine SolidDripLine(3, 0, "Solid Drip");
-LiquidLine SolidCycleLine(2, 0, "Solid  Cycle");
-LiquidLine RainbowSwirlLine(1, 0, "Rainbow  Swirl");
-LiquidLine RainbowDripLine(2, 0, "Rainbow Drip");
-LiquidLine RainbowCycleLine(1, 0, "Rainbow  Cycle");
-
-// Screens for effect selection
-LiquidScreen SolidColorScreen(SolidColorLine, LightstripStatusLine);
-LiquidScreen SolidDripScreen(SolidDripLine, LightstripStatusLine);
-LiquidScreen SolidCycleScreen(SolidCycleLine, LightstripStatusLine);
-LiquidScreen RainbowSwirlScreen(RainbowSwirlLine, LightstripStatusLine);
-LiquidScreen RainbowDripScreen(RainbowDripLine, LightstripStatusLine);
-LiquidScreen RainbowCycleScreen(RainbowCycleLine, LightstripStatusLine);
-
-// Definition of the menu for effect selection, screens are added in setup()
-LiquidMenu effectMenu(lcd);
-
-// Lines and Screens for Settings Menu
-//
-
-// Brightness Setting
-LiquidLine SettingBrightnessLine1(0, 0, "Brightness");
-LiquidLine SettingBrightnessLine2(13, 1, brightness);
-LiquidScreen SettingBrightnessScreen(SettingBrightnessLine1, SettingBrightnessLine2);
-
-// Solid Color R Setting
-LiquidLine SettingSolidColorRLine1(0, 0, "Solid Color R");
-LiquidLine SettingSolidColorRLine2(13, 1, solidColor.r);
-LiquidScreen SettingSolidColorRScreen(SettingSolidColorRLine1, SettingSolidColorRLine2);
-
-// Solid Color G Setting
-LiquidLine SettingSolidColorGLine1(0, 0, "Solid Color G");
-LiquidLine SettingSolidColorGLine2(13, 1, solidColor.g);
-LiquidScreen SettingSolidColorGScreen(SettingSolidColorGLine1, SettingSolidColorGLine2);
-
-// Solid Color B Setting
-LiquidLine SettingSolidColorBLine1(0, 0, "Solid Color B");
-LiquidLine SettingSolidColorBLine2(13, 1, solidColor.b);
-LiquidScreen SettingSolidColorBScreen(SettingSolidColorBLine1, SettingSolidColorBLine2);
-
-// Definition of the settings menu, screens are added in setup()
-LiquidMenu settingsMenu(lcd);
-
-// Definition of the Menu System
-LiquidSystem menuSystem(effectMenu, settingsMenu, 1);
 void setup()
 {
 // initialize lightstrips (uno)
@@ -120,19 +88,6 @@ void setup()
     // clear lightstrip values (sanity check)
     FastLED.clear();
     FastLED.show();
-
-    // initialize LCD Screens
-    effectMenu.add_screen(SolidColorScreen);
-    effectMenu.add_screen(SolidDripScreen);
-    effectMenu.add_screen(SolidCycleScreen);
-    effectMenu.add_screen(RainbowSwirlScreen);
-    effectMenu.add_screen(RainbowDripScreen);
-    effectMenu.add_screen(RainbowCycleScreen);
-
-    settingsMenu.add_screen(SettingBrightnessScreen);
-    settingsMenu.add_screen(SettingSolidColorRScreen);
-    settingsMenu.add_screen(SettingSolidColorGScreen);
-    settingsMenu.add_screen(SettingSolidColorBScreen);
 
     // initialize LCD
     lcd.begin(16, 2);
@@ -153,3 +108,88 @@ void loop()
 {
     // put your main code here, to run repeatedly:
 }
+
+void updateLCD()
+{
+    lcd.setCursor(0, 0);
+    if (menuindex == 0) // if on effects menu
+    {
+        switch (effectindex) // print top menu line based on effect name
+        {
+        case effectSolidColor:
+            lcd.println(F("  Solid  Color  "));
+            break;
+        case effectSolidDrip:
+            lcd.println(F("   Solid Drip   "));
+            break;
+        case effectSolidCycle:
+            lcd.println(F("  Solid  Cycle  "));
+            break;
+        case effectRainbowSwirl:
+            lcd.println(F(" Rainbow  Swirl "));
+            break;
+        case effectRainbowDrip:
+            lcd.println(F("  Rainbow Drip  "));
+            break;
+        case effectRainbowCycle:
+            lcd.println(F(" Rainbow  Cycle "));
+            break;
+        default:
+            lcd.println(F(" Unknown Effect "));
+            break;
+        }
+        // print bottom menu line based on whether lightstrip is on or off
+        // also print spacing + overwrite brightness value
+        if (lightstripOn == 0)
+        {
+            lcd.print(F("   Off --       "));
+        }
+        else
+        {
+            lcd.print(F("   On  --       "));
+        }
+
+        // set cursor back, print brightness
+        lcd.setCursor(10, 1);
+        lcd.print(brightness);
+    }
+    if (menuindex == 1) // if on settings menu
+    {
+        // print top and bottom menu lines based on setting name/value
+        switch (settingindex)
+        {
+        case settingSolidColorR:
+            lcd.println(F("Solid Color R   "));
+            lcd.print(F("                ")); // clear old value
+            lcd.setCursor(13, 1);
+            lcd.print(solidColorColor.r);
+            break;
+        case settingSolidColorG:
+            lcd.println(F("Solid Color G   "));
+            lcd.print(F("                ")); // clear old value
+            lcd.setCursor(13, 1);
+            lcd.print(solidColorColor.g);
+            break;
+        case settingSolidColorB:
+            lcd.println(F("Solid Color B   "));
+            lcd.print(F("                ")); // clear old value
+            lcd.setCursor(13, 1);
+            lcd.print(solidColorColor.b);
+            break;
+        case settingSolidColorOnSpacing:
+            lcd.println(F("SolClrOnSpacing "));
+            lcd.print(F("                ")); // clear old value
+            lcd.setCursor(13, 1);
+            lcd.print(SolidColorOnSpacing);
+            break;
+        case settingSolidColorOffSpacing:
+            lcd.println(F("SolClrOffSpacing"));
+            lcd.print(F("                ")); // clear old value
+            lcd.setCursor(13, 1);
+            lcd.print(SolidColorOffSpacing);
+            break;
+        default:
+            lcd.println(F("Unknown  Setting"));
+            lcd.print(F("Unknown  Setting"));
+            break;
+        }
