@@ -93,15 +93,12 @@ void setup()
     lcd.begin(16, 2);
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print(" SimpleNeoStrip ");
+    lcd.print(F(" SimpleNeoStrip "));
     lcd.setCursor(0, 1);
-    lcd.print("================");
+    lcd.print(F("================"));
 
     // wait so we can see the splash screen
     delay(750);
-
-    // switch over to menu system
-    menuSystem.update();
 }
 
 void loop()
@@ -193,3 +190,5 @@ void updateLCD()
             lcd.print(F("Unknown  Setting"));
             break;
         }
+    }
+}
