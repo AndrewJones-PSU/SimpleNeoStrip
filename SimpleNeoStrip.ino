@@ -77,18 +77,19 @@ void setup()
 {
     noInterrupts(); // disable all interrupts until we finish setup
 
-// initialize timers (uno)
+// initialize uno-specific setups
 #ifdef PLATFORM_ARDUINO_UNO
+    // initialize uno timers
     unotimerinit();
-#endif
-
-// initialize lightstrips (uno)
-#ifdef PLATFORM_ARDUINO_UNO
+    // initialize lightstrips for uno
     FastLED.addLeds<WS2812, LED_PIN_1, GRB>(leds, LEDS_PER_STRIP * 0, LEDS_PER_STRIP);
 #endif
 
-// initialize lightstrips (due)
+// initialize due-specific setups
 #ifdef PLATFORM_ARDUINO_DUE
+    // initialize due timers
+    duetimerinit();
+    // initialize lightstrips for due
     FastLED.addLeds<WS2811_PORTD, LED_STRIP_COUNT>(leds, LEDS_PER_STRIP);
 #endif
 
@@ -156,6 +157,13 @@ ISR(TIMER1_COMPA_vect) // timer compare interrupt service routine
 }
 
 #endif
+
+//#ifdef PLATFORM_ARDUINO_DUE
+void duetimerinit()
+{
+}
+
+//#endif
 
 void universalTimerInterruptHandler()
 {
