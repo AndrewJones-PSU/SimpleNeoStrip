@@ -75,6 +75,13 @@ LiquidCrystal lcd(LCD_RS_PIN, LCD_ENABLE_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN
 
 void setup()
 {
+    noInterrupts(); // disable all interrupts until we finish setup
+
+// initialize timers (uno)
+#ifdef PLATFORM_ARDUINO_UNO
+    unotimerinit();
+#endif
+
 // initialize lightstrips (uno)
 #ifdef PLATFORM_ARDUINO_UNO
     FastLED.addLeds<WS2812, LED_PIN_1, GRB>(leds, LEDS_PER_STRIP * 0, LEDS_PER_STRIP);
@@ -99,6 +106,64 @@ void setup()
 
     // wait so we can see the splash screen
     delay(750);
+
+    interrupts(); // enable interrupts
+}
+
+// initialize timers + interrupt handler for arduino uno
+#ifdef PLATFORM_ARDUINO_UNO
+void unotimerinit()
+{
+    /* timer1 register bits (for arduino uno) are set accordingly:
+     *
+     * this comment is excessively verbose, may be removed/shortened in the future
+     * See pages 108-113 of the ATmega328P datasheet for more information on timer1 registers, link here:
+     * https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf
+     *
+     * TCCR1A[7:4] = 0000 (don't output timer data to pins)
+     * TCCR1A[3:2] are reserved, leave as zeros
+     * TCCR1A[1:0] = 00 (we want CTC mode, clarified with TCCR1B[4:3]:TCCR1A[1:0] = 0100)
+     *
+     * TCCR1B[7] = 0 (don't need input capture noise canceler)
+     * TCCR1B[6] = 0 (don't need input capture edge select)
+     * TCCR1B[5] is reserved, leave as zero
+     * TCCR1B[4:3] = 01 (we want CTC mode, clarified with TCCR1B[4:3]:TCCR1A[1:0] = 0100)
+     * TCCR1B[2:0] = 010 (we want a prescaler of 8, so TCCR1B[2:0] = 010)
+     *
+     * TCNT1 = 0x0000 (init counter to zero)
+     *
+     * OCR1A = 33333 (init output compare register to desired count, in our case 16MHz/8/60Hz = 33333)
+     *
+     * TIMSK1[7:6] are reserved, leave as zeros
+     * TIMSK1[5] = 0 (don't need input capture interrupts)
+     * TIMSK1[4:3] are reserved, leave as zeros
+     * TIMSK1[2] = 0 (don't need output compare interrupt for channel B)
+     * TIMSK1[1] = 1 (enable output compare interrupt for channel A)
+     * TIMSK1[0] = 0 (don't need overflow interrupt)
+     *
+     * All other registers can be left at their default values
+     */
+    TCCR1A = 0b00000000; // set timer1 control register A
+    TCCR1B = 0b00001010; // set timer1 control register B
+    TCNT1 = 0;           // initialize counter value to 0
+    OCR1A = 33333;       // initialize compare value to 33333
+    TIMSK1 = 0b00000010; // enable timer compare interrupt for channel A
+}
+
+ISR(TIMER1_COMPA_vect) // timer compare interrupt service routine
+{
+    universalTimerInterruptHandler(); // call handler (allows uno+due to use same code)
+}
+
+#endif
+
+void universalTimerInterruptHandler()
+{
+    // TODO: update lightstrip effect values
+
+    FastLED.show(); // write values to lightstrips
+
+    // TODO: check buttons + if we need to update LCD
 }
 
 void loop()
