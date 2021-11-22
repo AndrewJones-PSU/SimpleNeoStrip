@@ -9,8 +9,13 @@
  */
 
 // Include the FastLED and LCD library
+#include "LSEffects.h"     // Header file for the effects functions
 #include <FastLED.h>       // FastLED library which handles writing to the LED strip(s)
 #include <LiquidCrystal.h> // LCD library which handles the LCD display
+
+// =================================
+// Global variables + defines
+// =================================
 
 /*
  * Definition of platform, this helps determine platform-specific code for timers
@@ -19,10 +24,11 @@
 // #define PLATFORM_ARDUINO_DUE
 
 /*
- * Definition of lightstrip parameters (strip count + leds per strip)
+ * Definition of lightstrip parameters (strip count + leds per strip + total LEDs)
  */
 #define LEDS_PER_STRIP 300
 #define LED_STRIP_COUNT 1
+uint16_t totalLEDs = LEDS_PER_STRIP * LED_STRIP_COUNT;
 
 // Definition of led values array
 CRGB leds[LEDS_PER_STRIP * LED_STRIP_COUNT];
@@ -72,6 +78,10 @@ uint8_t SolidColorOffSpacing = 0;          // # of off pixels for solid color be
 
 // Definition of the LCD object
 LiquidCrystal lcd(LCD_RS_PIN, LCD_ENABLE_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PIN);
+
+// =================================
+// setup and init functions
+// =================================
 
 void setup()
 {
@@ -165,18 +175,84 @@ void duetimerinit()
 
 //#endif
 
-void universalTimerInterruptHandler()
-{
-    // TODO: update lightstrip effect values
-
-    FastLED.show(); // write values to lightstrips
-
-    // TODO: check buttons + if we need to update LCD
-}
+// =================================
+// loop and runtime functions
+// =================================
 
 void loop()
 {
     // put your main code here, to run repeatedly:
+}
+
+void universalTimerInterruptHandler()
+{
+    // update lightstrip effect values
+    updateEffect();
+    // write values to lightstrips
+    FastLED.show();
+
+    // TODO: check buttons + if we need to update LCD
+}
+
+// after changing to a new effect, initialize it
+// this assumes effectindex is already set to the new effect
+void initEffect()
+{
+    switch (effectindex)
+    {
+    case effectSolidColor:
+        initSolidColor(leds, totalLEDs, solidColorColor, SolidColorOnSpacing, SolidColorOffSpacing);
+        break;
+    case effectSolidDrip:
+        initSolidDrip(leds, totalLEDs, solidColorColor, SolidColorOnSpacing, SolidColorOffSpacing);
+        break;
+    case effectSolidCycle:
+        initSolidCycle(leds, totalLEDs, solidColorColor, SolidColorOnSpacing, SolidColorOffSpacing);
+        break;
+    case effectRainbowSwirl:
+        initRainbowSwirl(leds, totalLEDs);
+        break;
+    case effectRainbowDrip:
+        initRainbowDrip(leds, totalLEDs);
+        break;
+    case effectRainbowCycle:
+        initRainbowCycle(leds, totalLEDs);
+        break;
+    default:
+        // if effectindex is invalid, init with red solid color with alternating on/off spacing
+        initSolidColor(leds, totalLEDs, CRGB::Red, 1, 1);
+        break;
+    }
+}
+
+// updates the current effect
+void updateEffect()
+{
+    switch (effectindex)
+    {
+    case effectSolidColor:
+        updateSolidColor(leds, totalLEDs);
+        break;
+    case effectSolidDrip:
+        updateSolidDrip(leds, totalLEDs);
+        break;
+    case effectSolidCycle:
+        updateSolidCycle(leds, totalLEDs);
+        break;
+    case effectRainbowSwirl:
+        updateRainbowSwirl(leds, totalLEDs);
+        break;
+    case effectRainbowDrip:
+        updateRainbowDrip(leds, totalLEDs);
+        break;
+    case effectRainbowCycle:
+        updateRainbowCycle(leds, totalLEDs);
+        break;
+    default:
+        // if effectindex is invalid, update with red solid color
+        updateSolidColor(leds, totalLEDs);
+        break;
+    }
 }
 
 void updateLCD()
@@ -190,10 +266,10 @@ void updateLCD()
             lcd.println(F("  Solid  Color  "));
             break;
         case effectSolidDrip:
-            lcd.println(F("   Solid Drip   "));
+            lcd.println(F("SolidColor  Drip"));
             break;
         case effectSolidCycle:
-            lcd.println(F("  Solid  Cycle  "));
+            lcd.println(F("SolidColor Cycle"));
             break;
         case effectRainbowSwirl:
             lcd.println(F(" Rainbow  Swirl "));
