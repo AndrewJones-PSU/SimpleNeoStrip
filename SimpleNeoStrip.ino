@@ -46,6 +46,20 @@ CRGB leds[LEDS_PER_STRIP * LED_STRIP_COUNT];
 #define LCD_D6_PIN 6
 #define LCD_D7_PIN 7
 
+// Definition of LCD button input + handlers
+#define LCD_BUTTON_PIN A0
+// indicies for arrays:
+// 0 = select button
+// 1 = up button
+// 2 = down button
+// 3 = left button
+// 4 = right button
+uint8_t buttonSR[4];          // shift registers, used for debouncing
+uint8_t buttonState[4];       // button states
+uint8_t buttonLastState[4];   // last button states
+uint8_t buttonHoldTrigger[2]; // trigger for hold times
+uint8_t buttonHoldCount[2];   // hold counters
+
 // enums for effects and menu items
 enum effects
 {
@@ -252,6 +266,53 @@ void updateEffect()
         // if effectindex is invalid, update with red solid color
         updateSolidColor(leds, totalLEDs);
         break;
+    }
+}
+
+// update the states of the buttons
+// button states are stored as shift registers, which enables debouncing
+void updateButtonStates()
+{
+    // read value from input pin
+    int read = analogRead(LCD_BUTTON_PIN);
+    // get which button is currently pressed
+    int pushedindex = 0;
+    if (read < 60) // right button
+        pushedindex = 4;
+    else if (read < 200) // up button
+        pushedindex = 1;
+    else if (read < 400) // down button
+        pushedindex = 2;
+    else if (read < 600) // left button
+        pushedindex = 3;
+    else if (read < 800) // select button
+        pushedindex = 0;
+    else
+        pushedindex = -1;
+    // loop through all buttons
+    for (int i = 0; i < 4; i++)
+    {
+        buttonSR[i] <<= 1;                   // shift register
+        buttonSR[i] |= (pushedindex == i);   // set bit to 1 if button is pressed
+        buttonSR[i] &= 0b00001111;           // clear top 4 bits of SR
+        buttonLastState[i] = buttonState[i]; // store last state
+        if (buttonSR[i] == 0b00001111)
+            buttonState[i] = 1;
+        else if (buttonSR[i] == 0b00000000)
+            buttonState[i] = 0;
+        if (i <= 2) // only handle buttons that support/need hold functionality
+        {
+            buttonHoldCount[i] += buttonState[i];
+            if (buttonHoldCount[i] > 30 && buttonState[i] == 1)
+            {
+                buttonHoldTrigger[i] = 1;
+                buttonHoldCount[i] = 0;
+            }
+            else
+            {
+                buttonHoldTrigger[i] = 0;
+            }
+        }
     }
 }
 
