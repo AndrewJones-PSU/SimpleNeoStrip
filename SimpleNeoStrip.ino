@@ -224,7 +224,7 @@ void initEffect()
         initSolidDrip(leds, totalLEDs, solidColorColor, SolidColorOnSpacing, SolidColorOffSpacing);
         break;
     case effectSolidCycle:
-        initSolidCycle(leds, totalLEDs, solidColorColor, SolidColorOnSpacing, SolidColorOffSpacing, CycleWaves);
+        initSolidCycle(leds, totalLEDs, solidColorColor, CycleWaves);
         break;
     case effectRainbowSwirl:
         initRainbowSwirl(leds, totalLEDs);
