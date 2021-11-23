@@ -212,6 +212,7 @@ void universalTimerInterruptHandler()
 // this assumes effectindex is already set to the new effect
 void initEffect()
 {
+    noInterrupts(); // disable interrupts until end of function, as initializing effects can take a while
     switch (effectindex)
     {
     case effectSolidColor:
@@ -237,6 +238,7 @@ void initEffect()
         initSolidColor(leds, totalLEDs, CRGB::Red, 1, 1);
         break;
     }
+    interrupts(); // re-enable interrupts
 }
 
 // updates the current effect
