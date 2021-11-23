@@ -77,7 +77,8 @@ enum setting
     settingSolidColorG,
     settingSolidColorB,
     settingSolidColorOnSpacing,
-    settingSolidColorOffSpacing
+    settingSolidColorOffSpacing,
+    settingCycleWaves
 };
 
 // Definition of settings (TODO: make some of these savable to EEPROM)
@@ -89,6 +90,7 @@ uint8_t brightness = 64;                   // Brightness of the lightstrip
 CRGB solidColorColor = CRGB::White;        // Color of the lightstrip
 uint8_t SolidColorOnSpacing = 1;           // # of on pixels for solid color between segments
 uint8_t SolidColorOffSpacing = 0;          // # of off pixels for solid color between segments
+uint8_t CycleWaves = 10;                   // # of waves for cycle effect
 
 // Definition of the LCD object
 LiquidCrystal lcd(LCD_RS_PIN, LCD_ENABLE_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PIN);
@@ -222,7 +224,7 @@ void initEffect()
         initSolidDrip(leds, totalLEDs, solidColorColor, SolidColorOnSpacing, SolidColorOffSpacing);
         break;
     case effectSolidCycle:
-        initSolidCycle(leds, totalLEDs, solidColorColor, SolidColorOnSpacing, SolidColorOffSpacing);
+        initSolidCycle(leds, totalLEDs, solidColorColor, SolidColorOnSpacing, SolidColorOffSpacing, CycleWaves);
         break;
     case effectRainbowSwirl:
         initRainbowSwirl(leds, totalLEDs);
@@ -231,7 +233,7 @@ void initEffect()
         initRainbowDrip(leds, totalLEDs);
         break;
     case effectRainbowCycle:
-        initRainbowCycle(leds, totalLEDs);
+        initRainbowCycle(leds, totalLEDs, CycleWaves);
         break;
     default:
         // if effectindex is invalid, init with red solid color with alternating on/off spacing
@@ -396,6 +398,12 @@ void updateLCD()
             lcd.print(F("                ")); // clear old value
             lcd.setCursor(13, 1);
             lcd.print(SolidColorOffSpacing);
+            break;
+        case settingCycleWaves:
+            lcd.println(F("  Cycle  Waves  "));
+            lcd.print(F("                ")); // clear old value
+            lcd.setCursor(13, 1);
+            lcd.print(CycleWaves);
             break;
         default:
             lcd.println(F("Unknown  Setting"));

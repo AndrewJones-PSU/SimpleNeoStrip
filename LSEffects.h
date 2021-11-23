@@ -23,7 +23,7 @@ int initSolidColor(CRGB *leds, int numLeds, CRGB color, int onSpacing, int offSp
 int initSolidDrip(CRGB *leds, int numLeds, CRGB color, int onSpacing, int offSpacing);
 
 // initialize solid cycle effect
-int initSolidCycle(CRGB *leds, int numLeds, CRGB color, int onSpacing, int offSpacing);
+int initSolidCycle(CRGB *leds, int numLeds, CRGB color, int onSpacing, int offSpacing, int cycleWaves);
 
 // initialize rainbow swirl effect
 int initRainbowSwirl(CRGB *leds, int numLeds);
@@ -32,7 +32,7 @@ int initRainbowSwirl(CRGB *leds, int numLeds);
 int initRainbowDrip(CRGB *leds, int numLeds);
 
 // initialize rainbow cycle effect
-int initRainbowCycle(CRGB *leds, int numLeds);
+int initRainbowCycle(CRGB *leds, int numLeds, int cycleWaves);
 
 // =================================
 // update functions
