@@ -88,7 +88,7 @@ effects effectindex = effectSolidColor;    // Which effect are we on
 setting settingindex = settingSolidColorR; // Which setting are we on in the menu
 uint8_t brightness = 64;                   // Brightness of the lightstrip
 CRGB solidColorColor = CRGB::White;        // Color of the lightstrip
-uint8_t SolidColorOnSpacing = 1;           // # of on pixels for solid color between segments
+uint8_t SolidColorOnSpacing = 9;           // # of on pixels for solid color between segments
 uint8_t SolidColorOffSpacing = 0;          // # of off pixels for solid color between segments
 uint8_t CycleWaves = 10;                   // # of waves for cycle effect
 
@@ -230,7 +230,7 @@ void initEffect()
         initRainbowSwirl(leds, totalLEDs);
         break;
     case effectRainbowDrip:
-        initRainbowDrip(leds, totalLEDs);
+        initRainbowDrip(leds, totalLEDs, SolidColorOnSpacing, SolidColorOffSpacing);
         break;
     case effectRainbowCycle:
         initRainbowCycle(leds, totalLEDs, CycleWaves);

@@ -50,12 +50,12 @@ int initSolidDrip(CRGB *leds, int numLeds, CRGB color, int onSpacing, int offSpa
 // initialize solid cycle effect
 int initSolidCycle(CRGB *leds, int numLeds, CRGB color, int cycleWaves)
 {
-    double scalar = 256.0 / numLeds * cycleWaves;
+    double waveScalar = 256.0 / numLeds * cycleWaves;
     for (int i = 0; i < numLeds; i++) // loop through all LEDs
     {
-        if (((int)((i * scalar) / 128) % 2) == 0) // any negative outputs of sin() should be zero
-            leds[i] = CRGB(sin8(i * scalar) * (color.r / 256.0), sin8(i * scalar) * (color.g / 256.0),
-                           sin8(i * scalar) * (color.b / 256.0));
+        if (((int)((i * waveScalar) / 128) % 2) == 0) // any negative outputs of sin() should be zero
+            leds[i] = CRGB(sin8(i * waveScalar) * (color.r / 256.0), sin8(i * waveScalar) * (color.g / 256.0),
+                           sin8(i * waveScalar) * (color.b / 256.0));
         else
             leds[i] = CRGB::Black;
     }
@@ -65,17 +65,43 @@ int initSolidCycle(CRGB *leds, int numLeds, CRGB color, int cycleWaves)
 // initialize rainbow swirl effect
 int initRainbowSwirl(CRGB *leds, int numLeds)
 {
-    double scalar = 256.0 / numLeds;
+    double hueScalar = 256.0 / numLeds;
     for (int i = 0; i < numLeds; i++) // loop through all LEDs
     {
-        hsv2rgb_raw(CHSV(i * scalar, 255, 255), leds[i]);
+        hsv2rgb_raw(CHSV(i * hueScalar, 255, 255), leds[i]);
     }
     return 0;
 }
 
 // initialize rainbow drip effect
-int initRainbowDrip(CRGB *leds, int numLeds)
+int initRainbowDrip(CRGB *leds, int numLeds, int onSpacing, int offSpacing)
 {
+    double hueScalar = 256.0 / numLeds;
+    int counter = 0;
+    bool on = true;
+    for (int i = 0; i < numLeds; i++) // loop through all LEDs
+    {
+        if (on) // handle on and off spacing
+        {
+            hsv2rgb_raw(CHSV(i * hueScalar, 255, 255), leds[i]);
+            counter++;
+            if (counter == onSpacing) // switch to off if onSpacing reached
+            {
+                on = false;
+                counter = 0;
+            }
+        }
+        else
+        {
+            leds[i] = CRGB::Black;
+            counter++;
+            if (counter == offSpacing) // switch to on if offSpacing reached
+            {
+                on = true;
+                counter = 0;
+            }
+        }
+    }
     return 0;
 }
 
