@@ -76,8 +76,9 @@ enum setting
     settingSolidColorR,
     settingSolidColorG,
     settingSolidColorB,
-    settingSolidColorOnSpacing,
-    settingSolidColorOffSpacing,
+    settingSolidDripRotates,
+    settingDripOnSpacing,
+    settingDripOffSpacing,
     settingCycleWaves
 };
 
@@ -88,8 +89,9 @@ effects effectindex = effectSolidColor;    // Which effect are we on
 setting settingindex = settingSolidColorR; // Which setting are we on in the menu
 uint8_t brightness = 64;                   // Brightness of the lightstrip
 CRGB solidColorColor = CRGB::White;        // Color of the lightstrip
-uint8_t SolidColorOnSpacing = 9;           // # of on pixels for solid color between segments
-uint8_t SolidColorOffSpacing = 0;          // # of off pixels for solid color between segments
+uint8_t DripOnSpacing = 9;                 // # of on pixels for solid color between segments
+uint8_t DripOffSpacing = 0;                // # of off pixels for solid color between segments
+boolean solidDripRotates = true;           // Whether or not the solid drip effect rotates
 uint8_t CycleWaves = 10;                   // # of waves for cycle effect
 
 // Definition of the LCD object
@@ -218,10 +220,10 @@ void initEffect()
     switch (effectindex)
     {
     case effectSolidColor:
-        initSolidColor(leds, totalLEDs, solidColorColor, SolidColorOnSpacing, SolidColorOffSpacing);
+        initSolidColor(leds, totalLEDs, solidColorColor);
         break;
     case effectSolidDrip:
-        initSolidDrip(leds, totalLEDs, solidColorColor, SolidColorOnSpacing, SolidColorOffSpacing);
+        initSolidDrip(leds, totalLEDs, solidColorColor, DripOnSpacing, DripOffSpacing);
         break;
     case effectSolidCycle:
         initSolidCycle(leds, totalLEDs, solidColorColor, CycleWaves);
@@ -230,14 +232,14 @@ void initEffect()
         initRainbowSwirl(leds, totalLEDs);
         break;
     case effectRainbowDrip:
-        initRainbowDrip(leds, totalLEDs, SolidColorOnSpacing, SolidColorOffSpacing);
+        initRainbowDrip(leds, totalLEDs, DripOnSpacing, DripOffSpacing);
         break;
     case effectRainbowCycle:
         initRainbowCycle(leds, totalLEDs, CycleWaves);
         break;
     default:
         // if effectindex is invalid, init with red solid color with alternating on/off spacing
-        initSolidColor(leds, totalLEDs, CRGB::Red, 1, 1);
+        initSolidDrip(leds, totalLEDs, CRGB::Red, 1, 1);
         break;
     }
     interrupts(); // re-enable interrupts
@@ -252,7 +254,7 @@ void updateEffect()
         updateSolidColor(leds, totalLEDs);
         break;
     case effectSolidDrip:
-        updateSolidDrip(leds, totalLEDs);
+        updateSolidDrip(leds, totalLEDs, solidDripRotates);
         break;
     case effectSolidCycle:
         updateSolidCycle(leds, totalLEDs);
@@ -267,8 +269,8 @@ void updateEffect()
         updateRainbowCycle(leds, totalLEDs);
         break;
     default:
-        // if effectindex is invalid, update with red solid color
-        updateSolidColor(leds, totalLEDs);
+        // if effectindex is invalid, update with drip effect (force no rotation)
+        updateSolidDrip(leds, totalLEDs, false);
         break;
     }
 }
@@ -387,17 +389,26 @@ void updateLCD()
             lcd.setCursor(13, 1);
             lcd.print(solidColorColor.b);
             break;
-        case settingSolidColorOnSpacing:
-            lcd.println(F("SolClrOnSpacing "));
+        case settingSolidDripRotates:
+            lcd.println(F("SolidDripRotates"));
             lcd.print(F("                ")); // clear old value
-            lcd.setCursor(13, 1);
-            lcd.print(SolidColorOnSpacing);
+            lcd.setCursor(10, 1);
+            if (solidDripRotates == false)
+                lcd.print(F("Static"));
+            else
+                lcd.print(F("Rotate"));
             break;
-        case settingSolidColorOffSpacing:
-            lcd.println(F("SolClrOffSpacing"));
+        case settingDripOnSpacing:
+            lcd.println(F("Drip  On-Spacing"));
             lcd.print(F("                ")); // clear old value
             lcd.setCursor(13, 1);
-            lcd.print(SolidColorOffSpacing);
+            lcd.print(DripOnSpacing);
+            break;
+        case settingDripOffSpacing:
+            lcd.println(F("Drip Off-Spacing"));
+            lcd.print(F("                ")); // clear old value
+            lcd.setCursor(13, 1);
+            lcd.print(DripOffSpacing);
             break;
         case settingCycleWaves:
             lcd.println(F("  Cycle  Waves  "));

@@ -10,8 +10,19 @@
 #include "LSEffects.h"
 
 // initialize solid color effect
-int initSolidColor(CRGB *leds, int numLeds, CRGB color, int onSpacing, int offSpacing)
+int initSolidColor(CRGB *leds, int numLeds, CRGB color)
 {
+    for (int i = 0; i < numLeds; i++) // loop through all LEDs
+    {
+        leds[i] = color;
+    }
+    return 0;
+}
+
+// initialize solid drip effect
+int initSolidDrip(CRGB *leds, int numLeds, CRGB color, int onSpacing, int offSpacing)
+{
+    // this has the same init as solid color, so we'll just call that
     int counter = 0;
     bool on = true;
     for (int i = 0; i < numLeds; i++) // loop through all LEDs
@@ -38,13 +49,6 @@ int initSolidColor(CRGB *leds, int numLeds, CRGB color, int onSpacing, int offSp
         }
     }
     return 0;
-}
-
-// initialize solid drip effect
-int initSolidDrip(CRGB *leds, int numLeds, CRGB color, int onSpacing, int offSpacing)
-{
-    // this has the same init as solid color, so we'll just call that
-    return initSolidColor(leds, numLeds, color, onSpacing, offSpacing);
 }
 
 // initialize solid cycle effect
@@ -118,7 +122,7 @@ int updateSolidColor(CRGB *leds, int numLeds)
 }
 
 // update solid drip effect
-int updateSolidDrip(CRGB *leds, int numLeds)
+int updateSolidDrip(CRGB *leds, int numLeds, boolean rotate)
 {
     return 0;
 }
