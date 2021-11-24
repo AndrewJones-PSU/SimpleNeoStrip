@@ -54,8 +54,8 @@ int initSolidCycle(CRGB *leds, int numLeds, CRGB color, int cycleWaves)
     for (int i = 0; i < numLeds; i++) // loop through all LEDs
     {
         if (((int)((i * scalar) / 128) % 2) == 0) // any negative outputs of sin() should be zero
-            leds[i] = CRGB(sin8_C(i * scalar) * (color.r / 256.0), sin8_C(i * scalar) * (color.g / 256.0),
-                           sin8_C(i * scalar) * (color.b / 256.0));
+            leds[i] = CRGB(sin8(i * scalar) * (color.r / 256.0), sin8(i * scalar) * (color.g / 256.0),
+                           sin8(i * scalar) * (color.b / 256.0));
         else
             leds[i] = CRGB::Black;
     }
@@ -65,7 +65,11 @@ int initSolidCycle(CRGB *leds, int numLeds, CRGB color, int cycleWaves)
 // initialize rainbow swirl effect
 int initRainbowSwirl(CRGB *leds, int numLeds)
 {
-
+    double scalar = 256.0 / numLeds;
+    for (int i = 0; i < numLeds; i++) // loop through all LEDs
+    {
+        hsv2rgb_raw(CHSV(i * scalar, 255, 255), leds[i]);
+    }
     return 0;
 }
 
