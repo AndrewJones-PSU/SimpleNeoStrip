@@ -55,11 +55,14 @@ int initSolidDrip(CRGB *leds, int numLeds, CRGB color, int onSpacing, int offSpa
 int initSolidCycle(CRGB *leds, int numLeds, CRGB color, int cycleWaves)
 {
     double waveScalar = 256.0 / numLeds * cycleWaves;
+    uint8_t sineValue = 0;
     for (int i = 0; i < numLeds; i++) // loop through all LEDs
     {
         if (((int)((i * waveScalar) / 128) % 2) == 0) // any negative outputs of sin() should be zero
-            leds[i] = CRGB(sin8(i * waveScalar) * (color.r / 256.0), sin8(i * waveScalar) * (color.g / 256.0),
-                           sin8(i * waveScalar) * (color.b / 256.0));
+        {
+            sineValue = sin8(i * waveScalar);
+            leds[i] = CRGB(sineValue * (color.r / 256.0), sineValue * (color.g / 256.0), sineValue * (color.b / 256.0));
+        }
         else
             leds[i] = CRGB::Black;
     }
@@ -112,6 +115,19 @@ int initRainbowDrip(CRGB *leds, int numLeds, int onSpacing, int offSpacing)
 // initialize rainbow cycle effect
 int initRainbowCycle(CRGB *leds, int numLeds, int cycleWaves)
 {
+    double hueScalar = 256.0 / numLeds;
+    double waveScalar = 256.0 / numLeds * cycleWaves;
+    for (int i = 0; i < numLeds; i++) // loop through all LEDs
+    {
+        if (((int)((i * waveScalar) / 128) % 2) == 0) // any negative outputs of sin() should be zero
+        {
+            hsv2rgb_raw(CHSV(i * hueScalar, 255, sin8(i * waveScalar)), leds[i]);
+        }
+        else
+        {
+            leds[i] = CRGB::Black;
+        }
+    }
     return 0;
 }
 
