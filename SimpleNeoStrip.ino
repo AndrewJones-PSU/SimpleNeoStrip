@@ -103,7 +103,7 @@ LiquidCrystal lcd(LCD_RS_PIN, LCD_ENABLE_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN
 
 void setup()
 {
-    noInterrupts(); // disable all interrupts until we finish setup
+    noInterrupts(); // disable all interrupts until we finish setup for timers and LEDs
 
 // initialize uno-specific setups
 #ifdef PLATFORM_ARDUINO_UNO
@@ -121,11 +121,16 @@ void setup()
     FastLED.addLeds<WS2811_PORTD, LED_STRIP_COUNT>(leds, LEDS_PER_STRIP);
 #endif
 
+    interrupts(); // enable interrupts
+
     // clear lightstrip values (sanity check)
     FastLED.clear();
     FastLED.show();
 
-    // initialize LCD
+    // initialize settings
+    FastLED.setBrightness(brightness);
+
+    // initialize LCD and display splash screen
     lcd.begin(16, 2);
     lcd.clear();
     lcd.setCursor(0, 0);
@@ -135,8 +140,10 @@ void setup()
 
     // wait so we can see the splash screen
     delay(750);
-
-    interrupts(); // enable interrupts
+    // initialize our effect
+    initEffect();
+    // show menu
+    updateLCD();
 }
 
 // initialize timers + interrupt handler for arduino uno
@@ -330,29 +337,30 @@ void updateLCD()
         switch (effectindex) // print top menu line based on effect name
         {
         case effectSolidColor:
-            lcd.println(F("  Solid  Color  "));
+            lcd.print(F("  Solid  Color  "));
             break;
         case effectSolidDrip:
-            lcd.println(F("SolidColor  Drip"));
+            lcd.print(F("SolidColor  Drip"));
             break;
         case effectSolidCycle:
-            lcd.println(F("SolidColor Cycle"));
+            lcd.print(F("SolidColor Cycle"));
             break;
         case effectRainbowSwirl:
-            lcd.println(F(" Rainbow  Swirl "));
+            lcd.print(F(" Rainbow  Swirl "));
             break;
         case effectRainbowDrip:
-            lcd.println(F("  Rainbow Drip  "));
+            lcd.print(F("  Rainbow Drip  "));
             break;
         case effectRainbowCycle:
-            lcd.println(F(" Rainbow  Cycle "));
+            lcd.print(F(" Rainbow  Cycle "));
             break;
         default:
-            lcd.println(F(" Unknown Effect "));
+            lcd.print(F(" Unknown Effect "));
             break;
         }
         // print bottom menu line based on whether lightstrip is on or off
         // also print spacing + overwrite brightness value
+        lcd.setCursor(0, 1);
         if (lightstripOn == 0)
         {
             lcd.print(F("   Off --       "));
@@ -372,25 +380,29 @@ void updateLCD()
         switch (settingindex)
         {
         case settingSolidColorR:
-            lcd.println(F("Solid Color R   "));
+            lcd.print(F("Solid Color R   "));
+            lcd.setCursor(0, 1);
             lcd.print(F("                ")); // clear old value
             lcd.setCursor(13, 1);
             lcd.print(solidColorColor.r);
             break;
         case settingSolidColorG:
-            lcd.println(F("Solid Color G   "));
+            lcd.print(F("Solid Color G   "));
+            lcd.setCursor(0, 1);
             lcd.print(F("                ")); // clear old value
             lcd.setCursor(13, 1);
             lcd.print(solidColorColor.g);
             break;
         case settingSolidColorB:
-            lcd.println(F("Solid Color B   "));
+            lcd.print(F("Solid Color B   "));
+            lcd.setCursor(0, 1);
             lcd.print(F("                ")); // clear old value
             lcd.setCursor(13, 1);
             lcd.print(solidColorColor.b);
             break;
         case settingSolidDripRotates:
-            lcd.println(F("SolidDripRotates"));
+            lcd.print(F("SolidDripRotates"));
+            lcd.setCursor(0, 1);
             lcd.print(F("                ")); // clear old value
             lcd.setCursor(10, 1);
             if (solidDripRotates == false)
@@ -399,25 +411,29 @@ void updateLCD()
                 lcd.print(F("Rotate"));
             break;
         case settingDripOnSpacing:
-            lcd.println(F("Drip  On-Spacing"));
+            lcd.print(F("Drip  On-Spacing"));
+            lcd.setCursor(0, 1);
             lcd.print(F("                ")); // clear old value
             lcd.setCursor(13, 1);
             lcd.print(DripOnSpacing);
             break;
         case settingDripOffSpacing:
-            lcd.println(F("Drip Off-Spacing"));
+            lcd.print(F("Drip Off-Spacing"));
+            lcd.setCursor(0, 1);
             lcd.print(F("                ")); // clear old value
             lcd.setCursor(13, 1);
             lcd.print(DripOffSpacing);
             break;
         case settingCycleWaves:
-            lcd.println(F("  Cycle  Waves  "));
+            lcd.print(F("  Cycle  Waves  "));
+            lcd.setCursor(0, 1);
             lcd.print(F("                ")); // clear old value
             lcd.setCursor(13, 1);
             lcd.print(CycleWaves);
             break;
         default:
-            lcd.println(F("Unknown  Setting"));
+            lcd.print(F("Unknown  Setting"));
+            lcd.setCursor(0, 1);
             lcd.print(F("Unknown  Setting"));
             break;
         }
