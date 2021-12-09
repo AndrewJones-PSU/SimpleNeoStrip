@@ -134,35 +134,75 @@ int initRainbowCycle(CRGB *leds, int numLeds, int cycleWaves)
 // update solid color effect
 int updateSolidColor(CRGB *leds, int numLeds)
 {
+    // don't actually need to do anything here :)
+    // in the event the way SolidColor functions is changed, this will be here
     return 0;
 }
 
 // update solid drip effect
 int updateSolidDrip(CRGB *leds, int numLeds, boolean rotate)
 {
+    // if we are rotating, we need to shift the array
+    if (rotate)
+    {
+        CRGB temp = leds[0];
+        for (int i = 0; i < numLeds - 1; i++) // loop through all LEDs
+        {
+            leds[i] = leds[i + 1];
+        }
+        leds[numLeds - 1] = temp;
+    }
     return 0;
 }
 
 // update solid cycle effect
 int updateSolidCycle(CRGB *leds, int numLeds)
 {
+    // same as solid drip, but we always need to shift the array
+    CRGB temp = leds[0];
+    for (int i = 0; i < numLeds - 1; i++) // loop through all LEDs
+    {
+        leds[i] = leds[i + 1];
+    }
+    leds[numLeds - 1] = temp;
     return 0;
 }
 
 // update rainbow swirl effect
 int updateRainbowSwirl(CRGB *leds, int numLeds)
 {
+    // same as solid cycle, shift array
+    CRGB temp = leds[0];
+    for (int i = 0; i < numLeds - 1; i++) // loop through all LEDs
+    {
+        leds[i] = leds[i + 1];
+    }
+    leds[numLeds - 1] = temp;
     return 0;
 }
 
 // update rainbow drip effect
 int updateRainbowDrip(CRGB *leds, int numLeds)
 {
+    // same as solid cycle, shift array
+    CRGB temp = leds[0];
+    for (int i = 0; i < numLeds - 1; i++) // loop through all LEDs
+    {
+        leds[i] = leds[i + 1];
+    }
+    leds[numLeds - 1] = temp;
     return 0;
 }
 
 // update rainbow cycle effect
 int updateRainbowCycle(CRGB *leds, int numLeds)
 {
+    // same as solid cycle, shift array
+    CRGB temp = leds[0];
+    for (int i = 0; i < numLeds - 1; i++) // loop through all LEDs
+    {
+        leds[i] = leds[i + 1];
+    }
+    leds[numLeds - 1] = temp;
     return 0;
 }
