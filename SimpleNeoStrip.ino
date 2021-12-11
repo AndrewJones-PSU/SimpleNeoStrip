@@ -418,8 +418,8 @@ void handleButtonPress(uint8_t buttonIndex)
             }
             else if (menuindex == 1) // if on settings menu
             {
-                initEffect();
                 updateSettingValue(-1);
+                initEffect();
             }
             break;
         }
