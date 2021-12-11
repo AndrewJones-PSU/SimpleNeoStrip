@@ -367,7 +367,8 @@ void updateButtonStates()
             else
             {
                 buttonHoldTimerCounter[i] = 0;
-                buttonHoldCounter[i] = buttonLastState[i];
+                if (buttonLastState[i] == 0)  // don't reset hold counter until next tick of button being released
+                    buttonHoldCounter[i] = 0; // this allows us to track whether the button was held after a release
             }
         }
     }
@@ -379,7 +380,7 @@ void handleButtonPress(uint8_t buttonIndex)
     {
     case 0: // select button
         // if depressing + we haven't held select long enough for menu swap, toggle lights
-        if (buttonState[buttonIndex] == 0 && buttonHoldCounter[buttonIndex] == 0)
+        if (buttonState[buttonIndex] == 0 && buttonHoldCounter[buttonIndex] < 2)
         {
             lightstripOn = !lightstripOn;
             if (lightstripOn)
@@ -471,9 +472,9 @@ void handleButtonHold(uint8_t buttonIndex)
         if (buttonHoldTrigger[buttonIndex] == 1)
         {
             if (menuindex == 0) // if on effects menu
-                brightness += 5;
+                brightness += 10;
             else if (menuindex == 1) // if on settings menu
-                updateSettingValue(5);
+                updateSettingValue(10);
         }
         break;
     case 2: // down button
@@ -481,9 +482,9 @@ void handleButtonHold(uint8_t buttonIndex)
         if (buttonHoldTrigger[buttonIndex] == 1)
         {
             if (menuindex == 0) // if on effects menu
-                brightness -= 5;
+                brightness -= 10;
             else if (menuindex == 1) // if on settings menu
-                updateSettingValue(-5);
+                updateSettingValue(-10);
         }
         break;
     }
