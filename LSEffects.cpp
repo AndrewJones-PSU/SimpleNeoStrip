@@ -92,7 +92,7 @@ int initRainbowDrip(CRGB *leds, int numLeds, int onSpacing, int offSpacing)
         {
             hsv2rgb_raw(CHSV(i * hueScalar, 255, 255), leds[i]);
             counter++;
-            if (counter == onSpacing) // switch to off if onSpacing reached
+            if (counter == onSpacing && offSpacing != 0) // switch to off if onSpacing reached
             {
                 on = false;
                 counter = 0;
@@ -102,7 +102,7 @@ int initRainbowDrip(CRGB *leds, int numLeds, int onSpacing, int offSpacing)
         {
             leds[i] = CRGB::Black;
             counter++;
-            if (counter == offSpacing) // switch to on if offSpacing reached
+            if (counter == offSpacing && onSpacing != 0) // switch to on if offSpacing reached
             {
                 on = true;
                 counter = 0;
