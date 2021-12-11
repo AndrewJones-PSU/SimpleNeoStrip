@@ -54,11 +54,12 @@ CRGB leds[LEDS_PER_STRIP * LED_STRIP_COUNT];
 // 2 = down button
 // 3 = left button
 // 4 = right button
-uint8_t buttonSR[4];          // shift registers, used for debouncing
-uint8_t buttonState[4];       // button states
-uint8_t buttonLastState[4];   // last button states
-uint8_t buttonHoldTrigger[2]; // trigger for hold times
-uint8_t buttonHoldCount[2];   // hold counters
+uint8_t buttonSR[4];               // shift registers, used for debouncing
+uint8_t buttonState[4];            // button states
+uint8_t buttonLastState[4];        // last button states
+uint8_t buttonHoldTrigger[2];      // trigger for hold times
+uint8_t buttonHoldTimerCounter[2]; // counter for button hold triggering
+uint8_t buttonHoldCounter[2];      // number of times button has triggered during current hold
 
 // enums for effects and menu items
 enum effects
@@ -89,10 +90,10 @@ effects effectindex = effectSolidColor;    // Which effect are we on
 setting settingindex = settingSolidColorR; // Which setting are we on in the menu
 uint8_t brightness = 64;                   // Brightness of the lightstrip
 CRGB solidColorColor = CRGB::White;        // Color of the lightstrip
-uint8_t DripOnSpacing = 9;                 // # of on pixels for solid color between segments
-uint8_t DripOffSpacing = 0;                // # of off pixels for solid color between segments
+uint8_t dripOnSpacing = 9;                 // # of on pixels for solid color between segments
+uint8_t dripOffSpacing = 0;                // # of off pixels for solid color between segments
 boolean solidDripRotates = true;           // Whether or not the solid drip effect rotates
-uint8_t CycleWaves = 10;                   // # of waves for cycle effect
+uint8_t cycleWaves = 10;                   // # of waves for cycle effect
 
 // Definition of the LCD object
 LiquidCrystal lcd(LCD_RS_PIN, LCD_ENABLE_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PIN);
@@ -224,7 +225,7 @@ void universalTimerInterruptHandler()
 
     // check if we have any button pushes to process, handle them if so
     for (int i = 0; i < 5; i++)
-        if (buttonState[i] == 1 && buttonLastState == 0)
+        if (buttonState[i] != buttonLastState[i])
         {
             handleButtonPress(i);
             shouldUpdateLCD = true;
@@ -258,19 +259,19 @@ void initEffect()
         initSolidColor(leds, totalLEDs, solidColorColor);
         break;
     case effectSolidDrip:
-        initSolidDrip(leds, totalLEDs, solidColorColor, DripOnSpacing, DripOffSpacing);
+        initSolidDrip(leds, totalLEDs, solidColorColor, dripOnSpacing, dripOffSpacing);
         break;
     case effectSolidCycle:
-        initSolidCycle(leds, totalLEDs, solidColorColor, CycleWaves);
+        initSolidCycle(leds, totalLEDs, solidColorColor, cycleWaves);
         break;
     case effectRainbowSwirl:
         initRainbowSwirl(leds, totalLEDs);
         break;
     case effectRainbowDrip:
-        initRainbowDrip(leds, totalLEDs, DripOnSpacing, DripOffSpacing);
+        initRainbowDrip(leds, totalLEDs, dripOnSpacing, dripOffSpacing);
         break;
     case effectRainbowCycle:
-        initRainbowCycle(leds, totalLEDs, CycleWaves);
+        initRainbowCycle(leds, totalLEDs, cycleWaves);
         break;
     default:
         // if effectindex is invalid, init with red solid color with alternating on/off spacing
@@ -338,16 +339,23 @@ void updateButtonStates()
         buttonSR[i] &= 0b00001111;           // clear top 4 bits of SR
         buttonLastState[i] = buttonState[i]; // store last state
         if (buttonSR[i] == 0b00001111)
+        {
             buttonState[i] = 1;
+            if (i <= 2) // clear hold counter flag on supported buttons
+                buttonHoldCounter[i] = 0;
+        }
         else if (buttonSR[i] == 0b00000000)
+        {
             buttonState[i] = 0;
+        }
         if (i <= 2) // only handle buttons that support/need hold functionality
         {
-            buttonHoldCount[i] += buttonState[i];
-            if (buttonHoldCount[i] > 30 && buttonState[i] == 1)
+            buttonHoldTimerCounter[i] += buttonState[i];
+            if (buttonHoldTimerCounter[i] > 30 && buttonState[i] == 1)
             {
-                buttonHoldTrigger[i] = 1;
-                buttonHoldCount[i] = 0;
+                buttonHoldCounter[i]++; // increment hold counter
+                buttonHoldTrigger[i] = 2;
+                buttonHoldTimerCounter[i] = 0;
             }
             else
             {
@@ -361,6 +369,46 @@ void handleButtonPress(uint8_t buttonIndex)
 {
     switch (buttonIndex)
     {
+    case 0: // select button
+        // if depressing + we haven't held select long enough for menu swap, toggle lights
+        if (buttonState[buttonIndex] == 0 && buttonHoldCounter[buttonIndex] == 1)
+        {
+            lightstripOn = !lightstripOn;
+            if (lightstripOn)
+                FastLED.setBrightness(brightness);
+            else
+                FastLED.setBrightness(0);
+        }
+        break;
+    case 1: // up button
+        // if pressing, increment either brightness or value depending on menu state
+        if (menuindex == 0) // if on effects menu
+            brightness++;
+        else if (menuindex == 1) // if on settings menu
+            updateSettingValue(1);
+        break;
+    case 2: // down button
+        // if pressing, decrement either brightness or value depending on menu state
+        if (menuindex == 0) // if on effects menu
+            brightness--;
+        else if (menuindex == 1) // if on settings menu
+            updateSettingValue(-1);
+        break;
+    case 3: // left button
+        // if pressing, cycle through either effects or settings depending on menu state
+        if (menuindex == 0) // if on effects menu
+            // based enum typecasting lol
+            effectindex = (effects)(effectindex - 1);
+        else if (menuindex == 1) // if on settings menu
+            settingindex = (setting)(settingindex - 1);
+        break;
+    case 4: // right button
+        // if pressing, cycle through either effects or settings depending on menu state
+        if (menuindex == 0) // if on effects menu
+            effectindex = (effects)(effectindex + 1);
+        else if (menuindex == 1) // if on settings menu
+            settingindex = (setting)(settingindex + 1);
+        break;
     }
 }
 
@@ -368,6 +416,64 @@ void handleButtonHold(uint8_t buttonIndex)
 {
     switch (buttonIndex)
     {
+    case 0: // select button
+        // if held, swap between effects and settings menus (but only once)
+        if (buttonHoldTrigger[buttonIndex] == 1 && buttonHoldCounter[buttonIndex] == 2)
+        {
+            if (menuindex == 0)
+                menuindex = 1;
+            else
+                menuindex = 0;
+        }
+        break;
+    case 1: // up button
+        // if held, increment either brightness or value depending on menu state
+        if (buttonHoldTrigger[buttonIndex] == 1)
+        {
+            if (menuindex == 0) // if on effects menu
+                brightness += 5;
+            else if (menuindex == 1) // if on settings menu
+                updateSettingValue(5);
+        }
+        break;
+    case 2: // down button
+        // if held, decrement either brightness or value depending on menu state
+        if (buttonHoldTrigger[buttonIndex] == 1)
+        {
+            if (menuindex == 0) // if on effects menu
+                brightness -= 5;
+            else if (menuindex == 1) // if on settings menu
+                updateSettingValue(-5);
+        }
+        break;
+    }
+}
+
+void updateSettingValue(uint8_t value)
+{
+    switch (settingindex)
+    {
+    case setting::settingSolidColorR:
+        solidColorColor.r += value;
+        break;
+    case setting::settingSolidColorG:
+        solidColorColor.g += value;
+        break;
+    case setting::settingSolidColorB:
+        solidColorColor.b += value;
+        break;
+    case setting::settingSolidDripRotates:
+        solidDripRotates = !solidDripRotates;
+        break;
+    case setting::settingDripOnSpacing:
+        dripOnSpacing += value;
+        break;
+    case setting::settingDripOffSpacing:
+        dripOffSpacing += value;
+        break;
+    case setting::settingCycleWaves:
+        cycleWaves += value;
+        break;
     }
 }
 
@@ -457,21 +563,21 @@ void updateLCD()
             lcd.setCursor(0, 1);
             lcd.print(F("                ")); // clear old value
             lcd.setCursor(13, 1);
-            lcd.print(DripOnSpacing);
+            lcd.print(dripOnSpacing);
             break;
         case settingDripOffSpacing:
             lcd.print(F("Drip Off-Spacing"));
             lcd.setCursor(0, 1);
             lcd.print(F("                ")); // clear old value
             lcd.setCursor(13, 1);
-            lcd.print(DripOffSpacing);
+            lcd.print(dripOffSpacing);
             break;
         case settingCycleWaves:
             lcd.print(F("  Cycle  Waves  "));
             lcd.setCursor(0, 1);
             lcd.print(F("                ")); // clear old value
             lcd.setCursor(13, 1);
-            lcd.print(CycleWaves);
+            lcd.print(cycleWaves);
             break;
         default:
             lcd.print(F("Unknown  Setting"));
