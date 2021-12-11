@@ -31,7 +31,7 @@ int initSolidDrip(CRGB *leds, int numLeds, CRGB color, int onSpacing, int offSpa
         {
             leds[i] = color;
             counter++;
-            if (counter == onSpacing) // switch to off if onSpacing reached
+            if (counter == onSpacing && offSpacing != 0) // switch to off if onSpacing reached
             {
                 on = false;
                 counter = 0;
@@ -41,7 +41,7 @@ int initSolidDrip(CRGB *leds, int numLeds, CRGB color, int onSpacing, int offSpa
         {
             leds[i] = CRGB::Black;
             counter++;
-            if (counter == offSpacing) // switch to on if offSpacing reached
+            if (counter == offSpacing && onSpacing != 0) // switch to on if offSpacing reached
             {
                 on = true;
                 counter = 0;
