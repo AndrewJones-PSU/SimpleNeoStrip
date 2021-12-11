@@ -20,8 +20,8 @@
 /*
  * Definition of platform, this helps determine platform-specific code for timers
  */
-// #define PLATFORM_ARDUINO_UNO
-#define PLATFORM_ARDUINO_DUE
+#define PLATFORM_ARDUINO_UNO
+// #define PLATFORM_ARDUINO_DUE
 
 /*
  * Definition of lightstrip parameters (strip count + leds per strip + total LEDs)
@@ -121,6 +121,8 @@ void setup()
     unotimerinit();
     // initialize lightstrips for uno
     FastLED.addLeds<WS2812, LED_PIN_1, GRB>(leds, LEDS_PER_STRIP * 0, LEDS_PER_STRIP);
+    // Additional lightstrip initialization would go here. An example is given below.
+    // FastLED.addLeds<WS2812, LED_PIN_2, GRB>(leds, LEDS_PER_STRIP * 1, LEDS_PER_STRIP);
 #endif
 
 // initialize due-specific setups
