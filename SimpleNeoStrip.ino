@@ -472,9 +472,16 @@ void handleButtonHold(uint8_t buttonIndex)
         if (buttonHoldTrigger[buttonIndex] == 1)
         {
             if (menuindex == 0) // if on effects menu
+            {
                 brightness += 10;
+                if (lightstripOn)
+                    FastLED.setBrightness(brightness);
+            }
             else if (menuindex == 1) // if on settings menu
+            {
                 updateSettingValue(10);
+                initEffect();
+            }
         }
         break;
     case 2: // down button
@@ -482,9 +489,16 @@ void handleButtonHold(uint8_t buttonIndex)
         if (buttonHoldTrigger[buttonIndex] == 1)
         {
             if (menuindex == 0) // if on effects menu
+            {
                 brightness -= 10;
+                if (lightstripOn)
+                    FastLED.setBrightness(brightness);
+            }
             else if (menuindex == 1) // if on settings menu
+            {
                 updateSettingValue(-10);
+                initEffect();
+            }
         }
         break;
     }
