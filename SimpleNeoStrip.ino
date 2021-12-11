@@ -20,8 +20,8 @@
 /*
  * Definition of platform, this helps determine platform-specific code for timers
  */
-#define PLATFORM_ARDUINO_UNO
-// #define PLATFORM_ARDUINO_DUE
+// #define PLATFORM_ARDUINO_UNO
+#define PLATFORM_ARDUINO_DUE
 
 /*
  * Definition of lightstrip parameters (strip count + leds per strip + total LEDs)
@@ -48,6 +48,14 @@ CRGB leds[LEDS_PER_STRIP * LED_STRIP_COUNT];
 
 // Definition of LCD button input + handlers
 #define LCD_BUTTON_PIN A0
+
+// The Arduino Due can't read the select button on the LCD, so we'll use a
+// seperate pin for a seperate button.
+#define DUE_SELECT_BUTTON_PIN 53
+// We also set an adjacent pin to ground, which will allow us to read the
+// select button as a pullup.
+#define DUE_SELECT_BUTTON_PULLUP_PIN 49
+
 // indicies for arrays:
 // 0 = select button
 // 1 = up button
@@ -121,6 +129,11 @@ void setup()
     duetimerinit();
     // initialize lightstrips for due
     FastLED.addLeds<WS2811_PORTD, LED_STRIP_COUNT>(leds, LEDS_PER_STRIP);
+    // set digital input pin for due select button
+    pinMode(DUE_SELECT_BUTTON_PIN, INPUT_PULLUP);
+    // set digital output low pin for due select button pullup
+    pinMode(DUE_SELECT_BUTTON_PULLUP_PIN, OUTPUT);
+    digitalWrite(DUE_SELECT_BUTTON_PULLUP_PIN, LOW);
 #endif
 
     // clear lightstrip values (sanity check)
@@ -194,12 +207,38 @@ ISR(TIMER1_COMPA_vect) // timer compare interrupt service routine
 
 #endif
 
-//#ifdef PLATFORM_ARDUINO_DUE
+#ifdef PLATFORM_ARDUINO_DUE
 void duetimerinit()
 {
+    // a lot of this is based on code and information from this blog post:
+    // http://ko7m.blogspot.com/2015/01/arduino-due-timers-part-1.html
+
+    // disable write protection on power management controller
+    pmc_set_writeprotect(false);
+    // enable timer clock for timer1 channel0
+    pmc_enable_periph_clk(ID_TC3);
+    // configure the timer
+    TC_Configure(TC1, 0, TC_CMR_WAVE | TC_CMR_WAVSEL_UP_RC | TC_CMR_TCCLKS_TIMER_CLOCK3);
+    // configure timer reset on RC compare
+    // in this case, 84MHz/32/60Hz = 43750 (32 is from timer clock 3 prescaler)
+    TC_SetRA(TC1, 0, 43750 / 2);
+    TC_SetRC(TC1, 0, 43750);
+    TC_Start(TC1, 0);
+    // set the "enable register compare" bit
+    TC1->TC_CHANNEL[0].TC_IER = TC_IER_CPCS;
+    // clear(?) the "don't enable register compare" bit
+    TC1->TC_CHANNEL[0].TC_IDR = ~TC_IER_CPCS;
+    // enable the interrupt
+    NVIC_EnableIRQ(TC3_IRQn);
 }
 
-//#endif
+void TC3_Handler()
+{
+    TC_GetStatus(TC1, 0); // clear interrupt flag
+    updateFlag = 1;       // tell main loop to update the lightstrip
+}
+
+#endif
 
 // =================================
 // loop and runtime functions
@@ -322,17 +361,8 @@ void updateButtonStates()
     // read value from input pin
     int read = analogRead(LCD_BUTTON_PIN);
     // get which button is currently pressed
-    int pushedindex = -1;
-    if (read < 60) // right button
-        pushedindex = 4;
-    else if (read < 200) // up button
-        pushedindex = 1;
-    else if (read < 400) // down button
-        pushedindex = 2;
-    else if (read < 600) // left button
-        pushedindex = 3;
-    else if (read < 800) // select button
-        pushedindex = 0;
+    // uses a function since this is platform-specific (3.3V vs 5V)
+    int pushedindex = getButtonIndex(read);
 
     // loop through all buttons
     for (int i = 0; i < 5; i++)
@@ -373,6 +403,46 @@ void updateButtonStates()
         }
     }
 }
+
+// the arduino uno and arduino due have slightly different button readings from the LCD keypad. in
+// addition, since the due cannot read the select button, we need to use a different button hooked
+// to a digital input for it. These platform-specific functions handle the differences between them.
+
+#ifdef PLATFORM_ARDUINO_UNO
+int getButtonIndex(int readValue)
+{
+    if (readValue < 60) // right button
+        return 4;
+    else if (readValue < 200) // up button
+        return 1;
+    else if (readValue < 400) // down button
+        return 2;
+    else if (readValue < 600) // left button
+        return 3;
+    else if (readValue < 800) // select button
+        return 0;
+    // else, no button is pushed
+    return -1;
+}
+#endif
+
+#ifdef PLATFORM_ARDUINO_DUE
+int getButtonIndex(int readValue)
+{
+    if (readValue < 100) // right button
+        return 4;
+    else if (readValue < 300) // up button
+        return 1;
+    else if (readValue < 500) // down button
+        return 2;
+    else if (readValue < 800) // left button
+        return 3;
+    else if (digitalRead(DUE_SELECT_BUTTON_PIN) == 0)
+        return 0;
+    // else, no button is pushed
+    return -1;
+}
+#endif
 
 void handleButtonPress(uint8_t buttonIndex)
 {
