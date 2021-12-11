@@ -4,7 +4,7 @@
  *      these functions.
  *
  * @author Andrew Jones (https://github.com/AndrewJones-PSU)
- * @version 0.0.0
+ * @version 1.0.0
  */
 
 #ifndef _LS_EFFECTS_H_
