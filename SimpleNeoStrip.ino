@@ -216,7 +216,35 @@ void universalTimerInterruptHandler()
     // write values to lightstrips
     FastLED.show();
 
-    // TODO: check buttons + if we need to update LCD
+    // update the button states
+    updateButtonStates();
+
+    // flag for updating the LCD if a button is pressed/held
+    bool shouldUpdateLCD = false;
+
+    // check if we have any button pushes to process, handle them if so
+    for (int i = 0; i < 5; i++)
+        if (buttonState[i] == 1 && buttonLastState == 0)
+        {
+            handleButtonPress(i);
+            shouldUpdateLCD = true;
+            break; // only handle one button press per interrupt
+        }
+
+    // do the same for button holds
+    for (int i = 0; i < 3; i++)
+        if (buttonHoldTrigger[i] == 1)
+        {
+            handleButtonHold(i);
+            shouldUpdateLCD = true;
+            break; // only handle one button press per interrupt
+        }
+
+    // if a button hold or press happened, update the LCD
+    if (shouldUpdateLCD)
+        updateLCD();
+
+    // end of interrupt routine
 }
 
 // after changing to a new effect, initialize it
@@ -326,6 +354,20 @@ void updateButtonStates()
                 buttonHoldTrigger[i] = 0;
             }
         }
+    }
+}
+
+void handleButtonPress(uint8_t buttonIndex)
+{
+    switch (buttonIndex)
+    {
+    }
+}
+
+void handleButtonHold(uint8_t buttonIndex)
+{
+    switch (buttonIndex)
+    {
     }
 }
 
