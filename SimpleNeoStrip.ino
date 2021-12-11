@@ -101,8 +101,8 @@ effects effectindex = effectSolidColor;    // Which effect are we on
 setting settingindex = settingSolidColorR; // Which setting are we on in the menu
 uint8_t brightness = 64;                   // Brightness of the lightstrip
 CRGB solidColorColor = CRGB::White;        // Color of the lightstrip
-uint8_t dripOnSpacing = 9;                 // # of on pixels for solid color between segments
-uint8_t dripOffSpacing = 0;                // # of off pixels for solid color between segments
+uint8_t dripOnSpacing = 10;                // # of on pixels for solid color between segments
+uint8_t dripOffSpacing = 5;                // # of off pixels for solid color between segments
 boolean solidDripRotates = true;           // Whether or not the solid drip effect rotates
 uint8_t cycleWaves = 10;                   // # of waves for cycle effect
 
