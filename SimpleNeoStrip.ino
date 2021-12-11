@@ -54,12 +54,15 @@ CRGB leds[LEDS_PER_STRIP * LED_STRIP_COUNT];
 // 2 = down button
 // 3 = left button
 // 4 = right button
-uint8_t buttonSR[4];               // shift registers, used for debouncing
-uint8_t buttonState[4];            // button states
-uint8_t buttonLastState[4];        // last button states
-uint8_t buttonHoldTrigger[2];      // trigger for hold times
-uint8_t buttonHoldTimerCounter[2]; // counter for button hold triggering
-uint8_t buttonHoldCounter[2];      // number of times button has triggered during current hold
+uint8_t buttonSR[5] = {};               // shift registers, used for debouncing
+uint8_t buttonState[5] = {};            // button states
+uint8_t buttonLastState[5] = {};        // last button states
+uint8_t buttonHoldTrigger[3] = {};      // trigger for hold times
+uint8_t buttonHoldTimerCounter[3] = {}; // counter for button hold triggering
+uint8_t buttonHoldCounter[3] = {};      // number of times button has triggered during current hold
+
+// Definition for update flag, used to determine if the lightstrip needs to be updated
+uint8_t updateFlag = 0;
 
 // enums for effects and menu items
 enum effects
@@ -104,8 +107,6 @@ LiquidCrystal lcd(LCD_RS_PIN, LCD_ENABLE_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN
 
 void setup()
 {
-    noInterrupts(); // disable all interrupts until we finish setup for timers and LEDs
-
 // initialize uno-specific setups
 #ifdef PLATFORM_ARDUINO_UNO
     // initialize uno timers
@@ -122,14 +123,13 @@ void setup()
     FastLED.addLeds<WS2811_PORTD, LED_STRIP_COUNT>(leds, LEDS_PER_STRIP);
 #endif
 
-    interrupts(); // enable interrupts
-
     // clear lightstrip values (sanity check)
     FastLED.clear();
     FastLED.show();
 
     // initialize settings
     FastLED.setBrightness(brightness);
+    // Serial.begin(9600); for debug when I do dumb things
 
     // initialize LCD and display splash screen
     lcd.begin(16, 2);
@@ -189,7 +189,7 @@ void unotimerinit()
 
 ISR(TIMER1_COMPA_vect) // timer compare interrupt service routine
 {
-    universalTimerInterruptHandler(); // call handler (allows uno+due to use same code)
+    updateFlag = 1; // tell main loop to update the lightstrip
 }
 
 #endif
@@ -207,10 +207,14 @@ void duetimerinit()
 
 void loop()
 {
-    // put your main code here, to run repeatedly:
+    if (updateFlag)
+    {
+        updateFlag = 0;
+        universalUpdateHandler();
+    }
 }
 
-void universalTimerInterruptHandler()
+void universalUpdateHandler()
 {
     // update lightstrip effect values
     updateEffect();
@@ -318,7 +322,7 @@ void updateButtonStates()
     // read value from input pin
     int read = analogRead(LCD_BUTTON_PIN);
     // get which button is currently pressed
-    int pushedindex = 0;
+    int pushedindex = -1;
     if (read < 60) // right button
         pushedindex = 4;
     else if (read < 200) // up button
@@ -329,37 +333,41 @@ void updateButtonStates()
         pushedindex = 3;
     else if (read < 800) // select button
         pushedindex = 0;
-    else
-        pushedindex = -1;
+
     // loop through all buttons
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 5; i++)
     {
         buttonSR[i] <<= 1;                   // shift register
         buttonSR[i] |= (pushedindex == i);   // set bit to 1 if button is pressed
         buttonSR[i] &= 0b00001111;           // clear top 4 bits of SR
         buttonLastState[i] = buttonState[i]; // store last state
         if (buttonSR[i] == 0b00001111)
-        {
             buttonState[i] = 1;
-            if (i <= 2) // clear hold counter flag on supported buttons
-                buttonHoldCounter[i] = 0;
-        }
         else if (buttonSR[i] == 0b00000000)
         {
             buttonState[i] = 0;
         }
+
         if (i <= 2) // only handle buttons that support/need hold functionality
         {
-            buttonHoldTimerCounter[i] += buttonState[i];
-            if (buttonHoldTimerCounter[i] > 30 && buttonState[i] == 1)
+            if (buttonState[i] == 1)
             {
-                buttonHoldCounter[i]++; // increment hold counter
-                buttonHoldTrigger[i] = 2;
-                buttonHoldTimerCounter[i] = 0;
+                buttonHoldTimerCounter[i]++;
+                if (buttonHoldTimerCounter[i] > 30 && buttonState[i] == 1)
+                {
+                    buttonHoldCounter[i]++; // increment hold counter
+                    buttonHoldTrigger[i] = 1;
+                    buttonHoldTimerCounter[i] = 0;
+                }
+                else
+                {
+                    buttonHoldTrigger[i] = 0;
+                }
             }
             else
             {
-                buttonHoldTrigger[i] = 0;
+                buttonHoldTimerCounter[i] = 0;
+                buttonHoldCounter[i] = buttonLastState[i];
             }
         }
     }
@@ -371,7 +379,7 @@ void handleButtonPress(uint8_t buttonIndex)
     {
     case 0: // select button
         // if depressing + we haven't held select long enough for menu swap, toggle lights
-        if (buttonState[buttonIndex] == 0 && buttonHoldCounter[buttonIndex] == 1)
+        if (buttonState[buttonIndex] == 0 && buttonHoldCounter[buttonIndex] == 0)
         {
             lightstripOn = !lightstripOn;
             if (lightstripOn)
@@ -382,33 +390,65 @@ void handleButtonPress(uint8_t buttonIndex)
         break;
     case 1: // up button
         // if pressing, increment either brightness or value depending on menu state
-        if (menuindex == 0) // if on effects menu
-            brightness++;
-        else if (menuindex == 1) // if on settings menu
-            updateSettingValue(1);
-        break;
+        if (buttonState[buttonIndex] == 1)
+        {
+            if (menuindex == 0) // if on effects menu
+            {
+                brightness++;
+                if (lightstripOn)
+                    FastLED.setBrightness(brightness);
+            }
+            else if (menuindex == 1) // if on settings menu
+            {
+                updateSettingValue(1);
+                initEffect();
+            }
+            break;
+        }
     case 2: // down button
         // if pressing, decrement either brightness or value depending on menu state
-        if (menuindex == 0) // if on effects menu
-            brightness--;
-        else if (menuindex == 1) // if on settings menu
-            updateSettingValue(-1);
-        break;
+        if (buttonState[buttonIndex] == 1)
+        {
+            if (menuindex == 0) // if on effects menu
+            {
+                brightness--;
+                if (lightstripOn)
+                    FastLED.setBrightness(brightness);
+            }
+            else if (menuindex == 1) // if on settings menu
+            {
+                initEffect();
+                updateSettingValue(-1);
+            }
+            break;
+        }
     case 3: // left button
         // if pressing, cycle through either effects or settings depending on menu state
-        if (menuindex == 0) // if on effects menu
-            // based enum typecasting lol
-            effectindex = (effects)(effectindex - 1);
-        else if (menuindex == 1) // if on settings menu
-            settingindex = (setting)(settingindex - 1);
-        break;
+        if (buttonState[buttonIndex] == 1)
+        {
+            if (menuindex == 0) // if on effects menu
+            {
+                effectindex = (effects)(effectindex - 1);
+                initEffect();
+            }
+            else if (menuindex == 1) // if on settings menu
+                settingindex = (setting)(settingindex - 1);
+            break;
+        }
+
     case 4: // right button
         // if pressing, cycle through either effects or settings depending on menu state
-        if (menuindex == 0) // if on effects menu
-            effectindex = (effects)(effectindex + 1);
-        else if (menuindex == 1) // if on settings menu
-            settingindex = (setting)(settingindex + 1);
-        break;
+        if (buttonState[buttonIndex] == 1)
+        {
+            if (menuindex == 0) // if on effects menu
+            {
+                effectindex = (effects)(effectindex + 1);
+                initEffect();
+            }
+            else if (menuindex == 1) // if on settings menu
+                settingindex = (setting)(settingindex + 1);
+            break;
+        }
     }
 }
 
