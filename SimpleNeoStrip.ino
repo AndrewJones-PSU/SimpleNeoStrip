@@ -82,6 +82,7 @@ enum effects
     effectRainbowDrip,
     effectRainbowCycle
 };
+uint8_t effectCount = 6;
 
 enum setting
 {
@@ -93,6 +94,7 @@ enum setting
     settingDripOffSpacing,
     settingCycleWaves
 };
+uint8_t settingCount = 7;
 
 // Definition of settings (TODO: make some of these savable to EEPROM)
 uint8_t lightstripOn = 1;                  // Whether or not the lightstrip is on
@@ -499,12 +501,12 @@ void handleButtonPress(uint8_t buttonIndex)
         // if pressing, cycle through either effects or settings depending on menu state
         if (buttonState[buttonIndex] == 1)
         {
-            if (menuindex == 0) // if on effects menu
+            if (menuindex == 0 && (int)effectindex > 0) // if on effects menu & not on first effect
             {
                 effectindex = (effects)(effectindex - 1);
                 initEffect();
             }
-            else if (menuindex == 1) // if on settings menu
+            else if (menuindex == 1 && (int)settingindex > 0) // if on settings menu & not on first setting
                 settingindex = (setting)(settingindex - 1);
             break;
         }
@@ -513,12 +515,12 @@ void handleButtonPress(uint8_t buttonIndex)
         // if pressing, cycle through either effects or settings depending on menu state
         if (buttonState[buttonIndex] == 1)
         {
-            if (menuindex == 0) // if on effects menu
+            if (menuindex == 0 && (int)effectindex < effectCount - 1) // if on effects menu & not on last effect
             {
                 effectindex = (effects)(effectindex + 1);
                 initEffect();
             }
-            else if (menuindex == 1) // if on settings menu
+            else if (menuindex == 1 && (int)settingindex < settingCount - 1) // if on settings menu & not on last setting
                 settingindex = (setting)(settingindex + 1);
             break;
         }
