@@ -501,13 +501,17 @@ void handleButtonPress(uint8_t buttonIndex)
         // if pressing, cycle through either effects or settings depending on menu state
         if (buttonState[buttonIndex] == 1)
         {
-            if (menuindex == 0 && (int)effectindex > 0) // if on effects menu & not on first effect
+            if (menuindex == 0) // if on effects menu
             {
                 effectindex = (effects)(effectindex - 1);
+                if ((int)effectindex == -1) // if before first effect, go to last effect
+                    effectindex = (effects)(effectCount - 1);
                 initEffect();
             }
-            else if (menuindex == 1 && (int)settingindex > 0) // if on settings menu & not on first setting
+            else if (menuindex == 1) // if on settings menu
                 settingindex = (setting)(settingindex - 1);
+                if ((int)settingindex == -1) // if before first setting, go to last setting
+                    settingindex = (setting)(settingCount - 1);
             break;
         }
 
@@ -515,13 +519,17 @@ void handleButtonPress(uint8_t buttonIndex)
         // if pressing, cycle through either effects or settings depending on menu state
         if (buttonState[buttonIndex] == 1)
         {
-            if (menuindex == 0 && (int)effectindex < effectCount - 1) // if on effects menu & not on last effect
+            if (menuindex == 0) // if on effects menu
             {
                 effectindex = (effects)(effectindex + 1);
+                if ((int)effectindex == effectCount) // if after last effect, go to first effect
+                    effectindex = (effects)0;
                 initEffect();
             }
-            else if (menuindex == 1 && (int)settingindex < settingCount - 1) // if on settings menu & not on last setting
+            else if (menuindex == 1) // if on settings menu 
                 settingindex = (setting)(settingindex + 1);
+                if ((int)settingindex == settingCount) // if after last setting, go to first setting
+                    settingindex = (setting)0;
             break;
         }
     }
