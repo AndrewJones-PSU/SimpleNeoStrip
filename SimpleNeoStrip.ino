@@ -102,7 +102,7 @@ uint8_t settingCount = 7;
 // Definition of settings (TODO: make some of these savable to EEPROM)
 uint8_t lightstripOn = 1;                  // Whether or not the lightstrip is on
 uint8_t menuindex = 0;                     // Which menu are we on, 0 = effects, 1 = settings
-effects effectindex = effectRainbowSwirl;  // Which effect are we on
+effects effectindex = effectSolidColor;    // Which effect are we on
 setting settingindex = settingSolidColorR; // Which setting are we on in the menu
 uint8_t brightness = 64;                   // Brightness of the lightstrip
 CRGB solidColorColor = CRGB::White;        // Color of the lightstrip
