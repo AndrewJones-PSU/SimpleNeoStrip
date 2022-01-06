@@ -13,6 +13,9 @@
 #include <FastLED.h>       // FastLED library which handles writing to the LED strip(s)
 #include <LiquidCrystal.h> // LCD library which handles the LCD display
 
+// serial debug definition, used for development
+// #define SERIAL_DEBUG
+
 // =================================
 // Global variables + defines
 // =================================
@@ -99,7 +102,7 @@ uint8_t settingCount = 7;
 // Definition of settings (TODO: make some of these savable to EEPROM)
 uint8_t lightstripOn = 1;                  // Whether or not the lightstrip is on
 uint8_t menuindex = 0;                     // Which menu are we on, 0 = effects, 1 = settings
-effects effectindex = effectSolidColor;    // Which effect are we on
+effects effectindex = effectRainbowSwirl;  // Which effect are we on
 setting settingindex = settingSolidColorR; // Which setting are we on in the menu
 uint8_t brightness = 64;                   // Brightness of the lightstrip
 CRGB solidColorColor = CRGB::White;        // Color of the lightstrip
@@ -146,7 +149,9 @@ void setup()
 
     // initialize settings
     FastLED.setBrightness(brightness);
-    // Serial.begin(9600); for debug when I do dumb things
+#ifdef SERIAL_DEBUG
+    Serial.begin(9600);
+#endif
 
     // initialize LCD and display splash screen
     lcd.begin(16, 2);
@@ -510,8 +515,8 @@ void handleButtonPress(uint8_t buttonIndex)
             }
             else if (menuindex == 1) // if on settings menu
                 settingindex = (setting)(settingindex - 1);
-                if ((int)settingindex == -1) // if before first setting, go to last setting
-                    settingindex = (setting)(settingCount - 1);
+            if ((int)settingindex == -1) // if before first setting, go to last setting
+                settingindex = (setting)(settingCount - 1);
             break;
         }
 
@@ -526,10 +531,10 @@ void handleButtonPress(uint8_t buttonIndex)
                     effectindex = (effects)0;
                 initEffect();
             }
-            else if (menuindex == 1) // if on settings menu 
+            else if (menuindex == 1) // if on settings menu
                 settingindex = (setting)(settingindex + 1);
-                if ((int)settingindex == settingCount) // if after last setting, go to first setting
-                    settingindex = (setting)0;
+            if ((int)settingindex == settingCount) // if after last setting, go to first setting
+                settingindex = (setting)0;
             break;
         }
     }
