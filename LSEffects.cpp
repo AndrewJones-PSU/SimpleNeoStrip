@@ -75,7 +75,7 @@ int initRainbowSwirl(CRGB *leds, int numLeds)
     double hueScalar = 256.0 / numLeds;
     for (int i = 0; i < numLeds; i++) // loop through all LEDs
     {
-        hsv2rgb_raw(CHSV(i * hueScalar, 255, 255), leds[i]);
+        hsv2rgb_rainbow(CHSV(i * hueScalar, 255, 255), leds[i]);
     }
     return 0;
 }
@@ -90,7 +90,7 @@ int initRainbowDrip(CRGB *leds, int numLeds, int onSpacing, int offSpacing)
     {
         if (on) // handle on and off spacing
         {
-            hsv2rgb_raw(CHSV(i * hueScalar, 255, 255), leds[i]);
+            hsv2rgb_rainbow(CHSV(i * hueScalar, 255, 255), leds[i]);
             counter++;
             if (counter == onSpacing && offSpacing != 0) // switch to off if onSpacing reached
             {
@@ -121,7 +121,7 @@ int initRainbowCycle(CRGB *leds, int numLeds, int cycleWaves)
     {
         if (((int)((i * waveScalar) / 128) % 2) == 0) // any negative outputs of sin() should be zero
         {
-            hsv2rgb_raw(CHSV(i * hueScalar, 255, sin8(i * waveScalar)), leds[i]);
+            hsv2rgb_rainbow(CHSV(i * hueScalar, 255, sin8(i * waveScalar)), leds[i]);
         }
         else
         {
