@@ -514,11 +514,9 @@ void handleButtonPress(uint8_t buttonIndex)
                 initEffect();
             }
             else if (menuindex == 1) // if on settings menu
-            {
                 settingindex = (setting)(settingindex - 1);
-                if ((uint8_t)settingindex == 255) // if before first setting, go to last setting
-                    settingindex = (setting)(settingCount - 1);
-            }
+            if ((uint8_t)settingindex == 255) // if before first setting, go to last setting
+                settingindex = (setting)(settingCount - 1);
             break;
         }
 
@@ -534,11 +532,9 @@ void handleButtonPress(uint8_t buttonIndex)
                 initEffect();
             }
             else if (menuindex == 1) // if on settings menu
-            {
                 settingindex = (setting)(settingindex + 1);
-                if ((uint8_t)settingindex == settingCount) // if after last setting, go to first setting
-                    settingindex = (setting)0;
-            }
+            if ((uint8_t)settingindex == settingCount) // if after last setting, go to first setting
+                settingindex = (setting)0;
             break;
         }
     }
