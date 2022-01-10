@@ -509,14 +509,16 @@ void handleButtonPress(uint8_t buttonIndex)
             if (menuindex == 0) // if on effects menu
             {
                 effectindex = (effects)(effectindex - 1);
-                if ((int)effectindex == -1) // if before first effect, go to last effect
+                if ((uint8_t)effectindex == 255) // if before first effect, go to last effect
                     effectindex = (effects)(effectCount - 1);
                 initEffect();
             }
             else if (menuindex == 1) // if on settings menu
+            {
                 settingindex = (setting)(settingindex - 1);
-            if ((int)settingindex == -1) // if before first setting, go to last setting
-                settingindex = (setting)(settingCount - 1);
+                if ((uint8_t)settingindex == 255) // if before first setting, go to last setting
+                    settingindex = (setting)(settingCount - 1);
+            }
             break;
         }
 
@@ -527,14 +529,16 @@ void handleButtonPress(uint8_t buttonIndex)
             if (menuindex == 0) // if on effects menu
             {
                 effectindex = (effects)(effectindex + 1);
-                if ((int)effectindex == effectCount) // if after last effect, go to first effect
+                if ((uint8_t)effectindex == effectCount) // if after last effect, go to first effect
                     effectindex = (effects)0;
                 initEffect();
             }
             else if (menuindex == 1) // if on settings menu
+            {
                 settingindex = (setting)(settingindex + 1);
-            if ((int)settingindex == settingCount) // if after last setting, go to first setting
-                settingindex = (setting)0;
+                if ((uint8_t)settingindex == settingCount) // if after last setting, go to first setting
+                    settingindex = (setting)0;
+            }
             break;
         }
     }
